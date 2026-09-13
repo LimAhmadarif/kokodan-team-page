@@ -1,17 +1,18 @@
 /* =========================================================================
    KKD-CREW — 코코단 팀원 소개 섹션 스타일
    Shadow DOM 안에서만 적용되어 팀 페이지의 다른 부분에 영향 없음 (:host = <kkd-crew> 태그).
+
+   색 토큰(--kc-ink/--kc-cream/--kc-hot/--kc-acid/--kc-violet 등)은 여기서
+   다시 정의하지 않습니다 — 커스텀 프로퍼티는 Shadow DOM 경계를 통과해 상속되므로,
+   팀 페이지(index.html)의 :root 에서 정의한 값을 그대로 이어받습니다.
+   이렇게 해야 이 섹션의 어두운 배경/크림 텍스트가 앞뒤 섹션과 픽셀 단위로
+   같은 색을 쓰게 되어 스크롤할 때 이음매가 보이지 않습니다.
+   주의: 이 컴포넌트는 반드시 index.html(:root 에서 색 토큰을 정의)과 함께
+   써야 합니다 — crew.css/crew.js 만 따로 떼어 미리보기하면 색이 정의되지
+   않아 투명/기본값으로 보입니다.
    ========================================================================= */
 
 :host {
-  /* ===== COLOR TOKENS ===== (팀 랜딩페이지 팔레트에 맞춤) */
-  --kc-ink: #08040a;
-  --kc-cream: #FFE9F0;
-  --kc-hot: #FF1361;
-  --kc-acid: #FFE500;
-  --kc-violet: #7B5CFF;
-  --kc-pink-dim: #FF6FA0;
-
   /* ===== TYPE TOKENS ===== */
   --kc-display: "Archivo", "Noto Sans KR", system-ui, sans-serif;
   --kc-kr: "Black Han Sans", "Noto Sans KR", sans-serif;
@@ -19,6 +20,10 @@
   --kc-sans: "Noto Sans KR", -apple-system, "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
   --kc-mono: "Space Mono", ui-monospace, monospace;
   --kc-pad: clamp(20px, 5vw, 80px);
+
+  /* 색 토큰은 여기서 선언하지 않습니다 — 자기 자신을 참조하는 fallback(var(--x, #fff))은
+     순환 참조로 처리되어 항상 무효가 되므로 절대 쓰면 안 됩니다. 선언을 아예 생략해야
+     인라인에서 :root 로부터 정상적으로 상속됩니다. */
 
   display: block;
   position: relative;
@@ -52,7 +57,7 @@
   margin: 0 auto;
   padding: clamp(48px, 8vw, 110px) var(--kc-pad) clamp(8px, 2vw, 24px);
 }
-:host .kc-label { font-family: var(--kc-mono); font-size: 11px; letter-spacing: .3em; color: var(--kc-pink-dim); }
+:host .kc-label { font-family: var(--kc-mono); font-size: 11px; letter-spacing: .3em; color: var(--kc-tag); }
 :host .kc-title {
   margin-top: 8px;
   font-family: var(--kc-kr);
@@ -67,8 +72,8 @@
 :host .member {
   --bg: transparent;                 /* 어두운 장면은 페이지의 별 배경이 비치도록 */
   --fg: var(--kc-cream);
-  --dim: rgba(255, 233, 240, .6);
-  --line: rgba(255, 233, 240, .16);
+  --dim: color-mix(in srgb, var(--kc-cream) 60%, transparent);
+  --line: color-mix(in srgb, var(--kc-cream) 16%, transparent);
   --sil: #2a1624;
   position: relative;
   min-height: 100vh;

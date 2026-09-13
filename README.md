@@ -1,12 +1,16 @@
 # 코코단 팀 페이지 — 인물 소개 교체 버전
 
-**▶ 바로 보기:** https://limahmadarif.github.io/kokodan-team-page/
+**▶ 바로 보기 (현재 버전):** https://limahmadarif.github.io/kokodan-team-page/
+**▶ 새 디자인 시안:** https://limahmadarif.github.io/kokodan-team-page/redesign/
 
 3팀 랜딩페이지(https://ghlee050505-web.github.io/3-Team/)를 바탕으로,
 **"02 침입자 DB" 인물 소개 섹션만** 코코단 캐릭터 장면으로 바꾼 버전입니다.
 나머지 섹션(침입 인트로 · 영상 · 능력치 · 작전 파일 · 속보 · 투표)은 원본 그대로입니다.
 
-## 바뀐 부분
+`redesign/` 폴더에는 전체 디자인 시스템을 다시 잡은 시안이 별도로 들어있습니다.
+루트 주소는 그 작업 이전 버전을 그대로 유지합니다 — 두 버전 모두 언제든 볼 수 있습니다.
+
+## 바뀐 부분 (루트 버전)
 - 팀원 3명이 한 명씩 화면 전체로 등장합니다.
   - 01 아메드 — 빠른 슬라이드
   - 02 김동규 — 카메라 줌 (LOCKED)
@@ -14,17 +18,23 @@
 - 인물 소개는 `<kkd-crew>` 태그 하나로 들어가며, 내용은 Shadow DOM 안에 그려져
   팀 페이지(React 기반)와 서로 간섭하지 않습니다.
 
+## redesign/ 버전에서 추가로 바뀐 것
+- 색·타이포를 하나의 디자인 시스템으로 통일 (calm 기본 화면 + 중요한 순간에만 강조색)
+- 인트로 타이밍 재조정, COCODAN 워드마크, 시네마틱 비디오 프레임
+- 능력치를 게임 UI 바 대신 에디토리얼 큰 숫자로, 투표 결과에 카운트업 + 스탬프 연출 추가
+
 ## 파일
-| 파일 | 설명 |
+| 경로 | 설명 |
 |---|---|
-| `index.html` | 팀 페이지 원본에서 인물 소개 섹션만 `<kkd-crew>`로 교체 |
+| `index.html` | (루트 버전) 팀 페이지 원본에서 인물 소개 섹션만 `<kkd-crew>`로 교체 |
 | `support.js` | 팀 페이지 원본 런타임 (수정 없음) |
 | `kkd-crew/crew.js` | 인물 소개 섹션 — 팀원 정보는 `===== TEAM INFORMATION =====` 에서 수정 |
 | `kkd-crew/crew.css` | 인물 소개 섹션 디자인 |
-| `assets/` | `ahmed.png`, `dongkyu.png`, `gahyun.png` 를 넣으면 실루엣 대신 사진 표시 |
+| `assets/` | `ahmed.png`, `dongkyu.png`, `gahyun.png` 를 넣으면 실루엣 대신 사진 표시 (redesign/assets/ 에도 각각 넣어야 새 디자인 시안에도 반영됩니다) |
+| `redesign/` | 디자인 시스템을 다시 잡은 시안 — 위 파일들과 같은 구조를 독립적으로 담고 있음 |
 
 ## 로컬에서 보기
 ```bash
 python -m http.server 8000
 ```
-브라우저에서 `http://localhost:8000` 을 엽니다.
+브라우저에서 `http://localhost:8000` (루트 버전) 또는 `http://localhost:8000/redesign/` (새 디자인 시안)을 엽니다.
