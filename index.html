@@ -67,7 +67,7 @@
           </div>
         </div>
         <div style="font-family:'Space Mono',monospace; font-size:11px; color:#b3aca9; letter-spacing:.2em">SCROLL TO EXPLORE ↓</div>
-        <div style="position:absolute; inset:0; pointer-events:none; opacity:.5; background:linear-gradient(rgba(255,19,97,.0), rgba(255,19,97,.18), rgba(255,19,97,0)); height:22%; animation:cd-scan 2.6s linear infinite"></div>
+        <div style="position:absolute; inset:0; pointer-events:none; opacity:.5; background:linear-gradient(rgba(255,19,97,.0), rgba(255,19,97,.18), rgba(255,19,97,0)); height:22%; animation:cd-scan 2.6s 2.5s linear infinite backwards"></div>
       </div>
     </sc-if>
 
@@ -114,6 +114,23 @@
     <sc-if value="{{ showSkip }}" hint-placeholder-val="{{ true }}">
       <button onClick="{{ skipIntro }}" style="position:absolute; right:18px; bottom:18px; z-index:12; background:rgba(8,4,10,.7); color:#FF6FA0; border:1px solid #FF1361; padding:8px 14px; font-family:'Space Mono',monospace; font-size:11px; letter-spacing:.16em; cursor:pointer" style-hover="background:#FF1361; color:#fff">SKIP INTRO ▸</button>
     </sc-if>
+
+    <button onClick="{{ soundToggle }}" style="position:absolute; left:18px; bottom:18px; z-index:12; background:rgba(8,4,10,.7); color:#FF6FA0; border:1px solid #FF1361; padding:8px 10px; display:flex; align-items:center; cursor:pointer" style-hover="background:#FF1361; color:#fff">
+      <sc-if value="{{ soundOn }}" hint-placeholder-val="{{ false }}">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M3 9v6h4l5 5V4L7 9H3z"></path>
+          <path d="M16 8a5 5 0 0 1 0 8"></path>
+          <path d="M19 5a9 9 0 0 1 0 14"></path>
+        </svg>
+      </sc-if>
+      <sc-if value="{{ soundOff }}" hint-placeholder-val="{{ true }}">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M3 9v6h4l5 5V4L7 9H3z"></path>
+          <line x1="23" y1="9" x2="17" y2="15"></line>
+          <line x1="17" y1="9" x2="23" y2="15"></line>
+        </svg>
+      </sc-if>
+    </button>
   </section>
 
   <div style="position:relative; z-index:5; background:#FF1361; color:#fff; overflow:hidden; border-top:2px solid #08040a; border-bottom:2px solid #08040a">
@@ -306,14 +323,133 @@
 </x-dc>
 <script type="text/x-dc" data-dc-script data-props="{&quot;autoIntro&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;연출&quot;},&quot;introSpeed&quot;:{&quot;editor&quot;:&quot;range&quot;,&quot;default&quot;:1,&quot;min&quot;:0.4,&quot;max&quot;:2,&quot;step&quot;:0.1,&quot;tsType&quot;:&quot;number&quot;,&quot;section&quot;:&quot;연출&quot;},&quot;dodgeButton&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;인터랙션&quot;}}">
 class Component extends DCLogic {
-  state = { phase: 0, dossier: null, voted: false, missionPct: 0 };
+  state = { phase: 0, dossier: null, voted: false, missionPct: 0, soundOn: false };
+
+  /* =========================
+     인트로 타이밍 — 2.5초 리딩타임 후 스캔 효과음, 이어서 침입 경고
+     ========================= */
+  startIntro() {
+    const speed = this.props.introSpeed ?? 1;
+    const jitter = (ms, spread) => ms + (Math.random() * 2 - 1) * spread;
+
+    clearTimeout(this.t0);
+    clearTimeout(this.t1);
+    clearTimeout(this.t2);
+
+    this.setState({ phase: 0 }, () => {
+      this.t0 = setTimeout(() => {
+        this.sfxScan();
+      }, jitter(2500, 220) * speed);
+
+      this.t1 = setTimeout(() => {
+        this.setState({ phase: 1 });
+        this.sfxIntrusion();
+      }, jitter(5100, 260) * speed);
+
+      this.t2 = setTimeout(() => {
+        this.setState({ phase: 2 });
+      }, jitter(9100, 300) * speed);
+    });
+  }
+
+  /* =========================
+     AUDIO — Web Audio API로 직접 만드는 합성음 (mp3 없음)
+     ========================= */
+  ac() {
+    if (!this._ac) {
+      const C = window.AudioContext || window.webkitAudioContext;
+      if (!C) return null;
+      this._ac = new C();
+    }
+    return this._ac;
+  }
+
+  tone(freq, t0, dur, { type = 'square', gain = 0.06, to = null } = {}) {
+    const ac = this.ac();
+    if (!ac) return;
+    const o = ac.createOscillator();
+    const g = ac.createGain();
+    o.type = type;
+    o.frequency.setValueAtTime(freq, t0);
+    if (to) o.frequency.exponentialRampToValueAtTime(to, t0 + dur);
+    g.gain.setValueAtTime(0.0001, t0);
+    g.gain.exponentialRampToValueAtTime(gain, t0 + 0.012);
+    g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+    o.connect(g).connect(ac.destination);
+    o.start(t0);
+    o.stop(t0 + dur + 0.03);
+  }
+
+  noise(t0, dur, gain = 0.05) {
+    const ac = this.ac();
+    if (!ac) return;
+    const len = Math.floor(ac.sampleRate * dur);
+    const buf = ac.createBuffer(1, len, ac.sampleRate);
+    const d = buf.getChannelData(0);
+    for (let i = 0; i < len; i++) d[i] = (Math.random() * 2 - 1) * (1 - i / len);
+    const s = ac.createBufferSource();
+    s.buffer = buf;
+    const f = ac.createBiquadFilter();
+    f.type = 'bandpass';
+    f.frequency.value = 1400;
+    f.Q.value = 0.7;
+    const g = ac.createGain();
+    g.gain.value = gain;
+    s.connect(f).connect(g).connect(ac.destination);
+    s.start(t0);
+  }
+
+  /* 첫 번째 스캔 효과음 (2.5초 리딩타임 뒤) */
+  sfxScan() {
+    const ac = this.ac();
+    if (!ac || !this.state.soundOn) return;
+    const t = ac.currentTime;
+    for (let i = 0; i < 4; i++) {
+      this.tone(880, t + i * 0.62, 0.07, { type: 'sine', gain: 0.035 });
+    }
+    this.tone(180, t, 2.4, { type: 'sine', gain: 0.02, to: 200 });
+  }
+
+  /* WARNING 침입 효과음 */
+  sfxIntrusion() {
+    const ac = this.ac();
+    if (!ac || !this.state.soundOn) return;
+    const t = ac.currentTime;
+    this.tone(1200, t, 0.5, { type: 'sawtooth', gain: 0.08, to: 90 });
+    this.noise(t, 0.45, 0.07);
+    for (let i = 0; i < 5; i++) {
+      this.tone(i % 2 ? 740 : 620, t + 0.55 + i * 0.34, 0.22, { type: 'square', gain: 0.055 });
+    }
+    this.noise(t + 1.9, 0.6, 0.05);
+    this.tone(70, t + 2.4, 0.9, { type: 'sawtooth', gain: 0.07, to: 40 });
+  }
+
+  async enableSound() {
+    const ac = this.ac();
+    if (ac && ac.state !== 'running') {
+      try { await ac.resume(); } catch (e) { console.warn('AudioContext resume failed:', e); }
+    }
+    if (!this.state.soundOn) this.setState({ soundOn: true });
+  }
+
+  muteSound() {
+    const ac = this.ac();
+    if (ac) ac.suspend().catch(() => {});
+    if (this.state.soundOn) this.setState({ soundOn: false });
+  }
 
   componentDidMount() {
+    /*
+      인트로는 페이지가 열리자마자 바로 재생됩니다.
+      오디오는 사용자가 페이지 어디든 처음 상호작용하는 순간 조용히
+      활성화되고, 좌측 하단 스피커 아이콘으로 언제든 켜고 끌 수 있습니다.
+    */
+    this._unlockAudio = () => { this.enableSound(); };
+    window.addEventListener('pointerdown', this._unlockAudio, { once: true });
+
     const auto = this.props.autoIntro ?? true;
-    const speed = this.props.introSpeed ?? 1;
     if (auto) {
-      this.t1 = setTimeout(() => this.setState({ phase: 1 }), 2600 * speed);
-      this.t2 = setTimeout(() => this.setState({ phase: 2 }), 6600 * speed);
+      this.startIntro();
     } else {
       this.setState({ phase: 2 });
     }
@@ -355,8 +491,9 @@ class Component extends DCLogic {
   }
 
   componentWillUnmount() {
-    clearTimeout(this.t1); clearTimeout(this.t2);
+    clearTimeout(this.t0); clearTimeout(this.t1); clearTimeout(this.t2);
     if (this.io) this.io.disconnect();
+    if (this._unlockAudio) window.removeEventListener('pointerdown', this._unlockAudio);
     window.removeEventListener('scroll', this.onScroll);
   }
 
@@ -370,7 +507,10 @@ class Component extends DCLogic {
       phaseRevealed: p === 2,
       flashing: p === 1,
       showSkip: p < 2,
-      skipIntro: () => { clearTimeout(this.t1); clearTimeout(this.t2); this.setState({ phase: 2 }); },
+      skipIntro: () => { clearTimeout(this.t0); clearTimeout(this.t1); clearTimeout(this.t2); this.setState({ phase: 2 }); },
+      soundOn: this.state.soundOn,
+      soundOff: !this.state.soundOn,
+      soundToggle: () => { this.state.soundOn ? this.muteSound() : this.enableSound(); },
       selectRosa: () => this.pick('rosa'),
       selectRoy: () => this.pick('roy'),
       selectNyang: () => this.pick('nyang'),
