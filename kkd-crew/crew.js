@@ -20,14 +20,16 @@
 
   /* ===== TEAM INFORMATION =====
      photos 경로는 이 페이지(index.html) 기준. 비포/애프터가 자동으로 번갈아 바뀌고, 없으면 placeholder 표시.
-     eyes 는 각 사진에서 두 눈의 픽셀 좌표 [[왼쪽], [오른쪽]] — 바뀔 때 얼굴이 겹쳐 보이도록 맞추는 데 씁니다. */
+     eyes 는 각 사진에서 두 눈의 픽셀 좌표 [[왼쪽], [오른쪽]] — 바뀔 때 얼굴이 겹쳐 보이도록 맞추는 데 씁니다.
+     hobby 는 있으면 SPECIALTY 아래 HOBBY 줄로 표시됩니다. */
   const MEMBERS = [
     {
       id: 'ahmed', number: '01', nameEn: 'AHMED', nameKo: '아메드',
       codename: 'CODENAME: SPARK',
-      role: 'The Instigator', roleKo: '일 벌이기 담당',
-      specialty: '아무도 안 물어본 아이디어를 회의 시작 3분 만에 던지기',
-      oneLiner: '일단 해보고, 설명은 나중에 할게요.',
+      role: 'The Refiner', roleKo: '아이디어 진화 담당',
+      specialty: '아이디어 하나 던지고 피드백 받을 때마다 최종 보스급으로 진화시키기',
+      oneLiner: '좋아요. 그럼 더 좋게 바꿔볼게요.',
+      hobby: '드라마/축구/게임',
       photos: { before: 'assets/ahmed-before.jpg', after: 'assets/ahmed-after.jpg' },
       eyes: { before: [[324, 324], [461, 322]], after: [[346, 366], [454, 362]] },
       accent: 'hot', theme: 'ink', entrance: 'slide',
@@ -40,9 +42,10 @@
     {
       id: 'dongkyu', number: '02', nameEn: 'DONGKYU', nameKo: '김동규',
       codename: 'CODENAME: BLUEPRINT',
-      role: 'The Strategist', roleKo: '계획 담당',
-      specialty: '혼돈을 깔끔한 표 한 장으로 바꾸는 능력',
-      oneLiner: '그 변수, 이미 세 수 앞에서 계산해 뒀습니다.',
+      role: 'The Mastermind', roleKo: '두뇌 풀가동 담당',
+      specialty: '팀원이 "이거 어떻게 하지?" 말 끝내기도 전에 AI랑 기술 스택 뒤져서 해결책 꺼내기',
+      oneLiner: '잠깐만요, 이거 방법 있을 것 같은데요?',
+      hobby: '노래/헬스/영화',
       photos: { before: 'assets/dongkyu-before.jpg', after: 'assets/dongkyu-after.jpg' },
       eyes: { before: [[249, 402], [446, 373]], after: [[480, 275], [613, 238]] },
       accent: 'violet', theme: 'cream', entrance: 'zoom',
@@ -55,9 +58,10 @@
     {
       id: 'gahyun', number: '03', nameEn: 'GAHYUN', nameKo: '이가현',
       codename: 'CODENAME: FINAL BOSS',
-      role: 'The Finisher', roleKo: '마무리 담당',
-      specialty: '"거의 다 됐어요"를 진짜 "다 됐어요"로 만드는 기술',
-      oneLiner: '시작은 둘이 했고, 끝은 제가 냅니다.',
+      role: 'The Perfectionist', roleKo: '디테일 집착 담당',
+      specialty: '다들 "이제 끝났다" 할 때 혼자 미세하게 어긋난 거 발견하고 다시 수정하기',
+      oneLiner: '좋은데... 이것만 조금 수정하면 더 좋을 것 같아요.',
+      hobby: '드라마/산책/카페',
       photos: { before: 'assets/gahyun-before.jpg', after: 'assets/gahyun-after.jpg' },
       eyes: { before: [[320, 284], [466, 284]], after: [[264, 352], [394, 350]] },
       accent: 'acid', theme: 'ink', entrance: 'impact',
@@ -275,6 +279,7 @@
             <div class="row"><dt>NAME</dt><dd>${esc(m.nameKo)} <span class="dim">· ${esc(m.nameEn)}</span></dd></div>
             <div class="row"><dt>ROLE</dt><dd><strong>${esc(m.role)}</strong> <span class="dim">${esc(m.roleKo)}</span></dd></div>
             <div class="row"><dt>SPECIALTY</dt><dd>${esc(m.specialty)}</dd></div>
+            ${m.hobby ? `<div class="row"><dt>HOBBY</dt><dd>${esc(m.hobby)}</dd></div>` : ''}
           </dl>
           <blockquote class="member__quote">
             <span class="label">ONE-LINER</span>
