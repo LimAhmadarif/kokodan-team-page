@@ -163,15 +163,30 @@
           mask-image: linear-gradient(to top, #000, transparent 65%);
 }
 :host .member__photo { position: absolute; inset: 0; }
-:host .member__img {
-  position: absolute; inset: 0;
-  width: 100%; height: 100%;
-  object-fit: contain;
-  object-position: 50% 100%;
-  filter: drop-shadow(0 28px 36px rgba(0, 0, 0, .4));
-}
 :host .member__ph { position: absolute; inset: 0; display: flex; align-items: flex-end; justify-content: center; }
 :host .has-photo .member__ph { display: none; }
+
+/* 비포/애프터 자동 전환 — 배경 있는 사진이라 액자처럼 채우고, 강조색 판은 뒤로 비켜 보이게 */
+:host .has-swap .member__photo {
+  overflow: hidden;
+  box-shadow: 0 28px 50px -12px rgba(0, 0, 0, .5);
+}
+:host .has-swap .member__slab { inset: 6% -4% -4% 8%; }
+:host .member--flip .has-swap .member__slab { inset: 6% 8% -4% -4%; }
+:host .member__swap {
+  position: absolute; inset: 0;
+  width: 100%; height: 100%;
+  object-fit: cover;
+  opacity: 0;
+  transform: var(--match, none);
+  transition: opacity .6s ease .45s, transform 1.25s cubic-bezier(.65, 0, .35, 1);
+}
+:host .member__photo[data-state="before"] .is-before,
+:host .member__photo[data-state="after"] .is-after {
+  opacity: 1;
+  transform: translate(0%, 0%) rotate(0deg) scale(1);
+  transition: opacity .7s ease, transform 1.25s cubic-bezier(.65, 0, .35, 1);
+}
 :host .member__ph .sil { width: 90%; height: auto; }
 :host .member__ph .sil__body { fill: var(--sil); }
 :host .member__q {

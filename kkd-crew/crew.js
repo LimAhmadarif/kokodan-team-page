@@ -19,7 +19,8 @@
   };
 
   /* ===== TEAM INFORMATION =====
-     photo 경로는 이 페이지(index.html) 기준입니다. 사진이 없으면 placeholder 표시. */
+     photos 경로는 이 페이지(index.html) 기준. 비포/애프터가 자동으로 번갈아 바뀌고, 없으면 placeholder 표시.
+     eyes 는 각 사진에서 두 눈의 픽셀 좌표 [[왼쪽], [오른쪽]] — 바뀔 때 얼굴이 겹쳐 보이도록 맞추는 데 씁니다. */
   const MEMBERS = [
     {
       id: 'ahmed', number: '01', nameEn: 'AHMED', nameKo: '아메드',
@@ -27,7 +28,9 @@
       role: 'The Instigator', roleKo: '일 벌이기 담당',
       specialty: '아무도 안 물어본 아이디어를 회의 시작 3분 만에 던지기',
       oneLiner: '일단 해보고, 설명은 나중에 할게요.',
-      photo: 'assets/ahmed.png', accent: 'hot', theme: 'ink', entrance: 'slide',
+      photos: { before: 'assets/ahmed-before.jpg', after: 'assets/ahmed-after.jpg' },
+      eyes: { before: [[324, 324], [461, 322]], after: [[346, 366], [454, 362]] },
+      accent: 'hot', theme: 'ink', entrance: 'slide',
       stats: [
         { label: '아이디어 발사 속도', value: 97 },
         { label: '회의록 작성 확률', value: 8 },
@@ -40,7 +43,9 @@
       role: 'The Strategist', roleKo: '계획 담당',
       specialty: '혼돈을 깔끔한 표 한 장으로 바꾸는 능력',
       oneLiner: '그 변수, 이미 세 수 앞에서 계산해 뒀습니다.',
-      photo: 'assets/dongkyu.png', accent: 'violet', theme: 'cream', entrance: 'zoom',
+      photos: { before: 'assets/dongkyu-before.jpg', after: 'assets/dongkyu-after.jpg' },
+      eyes: { before: [[249, 402], [446, 373]], after: [[480, 275], [613, 238]] },
+      accent: 'violet', theme: 'cream', entrance: 'zoom',
       stats: [
         { label: '계산 속도', value: 95 },
         { label: '표정 변화', value: 6 },
@@ -53,7 +58,9 @@
       role: 'The Finisher', roleKo: '마무리 담당',
       specialty: '"거의 다 됐어요"를 진짜 "다 됐어요"로 만드는 기술',
       oneLiner: '시작은 둘이 했고, 끝은 제가 냅니다.',
-      photo: 'assets/gahyun.png', accent: 'acid', theme: 'ink', entrance: 'impact',
+      photos: { before: 'assets/gahyun-before.jpg', after: 'assets/gahyun-after.jpg' },
+      eyes: { before: [[320, 284], [466, 284]], after: [[264, 352], [394, 350]] },
+      accent: 'acid', theme: 'ink', entrance: 'impact',
       stats: [
         { label: '완성도', value: 99 },
         { label: '디테일 집착', value: 98 },
@@ -81,14 +88,73 @@
     { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]
   ));
 
-  function loadImage(target, src, alt, className, onReady) {
-    if (!src || !target) return;
-    const img = new Image();
-    img.className = className;
-    img.alt = alt || '';
-    img.decoding = 'async';
-    img.onload = () => { target.appendChild(img); onReady && onReady(img); };
-    img.src = src; // 파일이 없으면 onload 가 안 불리고 placeholder 유지
+  /* ---------- 비포/애프터 자동 전환 ---------- */
+  // 사진은 세로 4:5 여야 eyes 좌표로 계산한 얼굴 맞춤이 정확함
+  const SWAP_MS = 3200;
+
+  function loadSwap(fig, m) {
+    const p = m.photos || {};
+    const keys = ['before', 'after'].filter((k) => p[k]);
+    const imgs = {};
+    let pending = keys.length;
+    const done = () => { if (--pending === 0) mountSwap(fig, imgs, m.eyes); };
+    keys.forEach((k) => {
+      const img = new Image();
+      img.className = `member__swap is-${k}`;
+      img.alt = `${m.nameKo} (${m.nameEn}) — ${k === 'before' ? '변신 전' : '변신 후'}`;
+      img.decoding = 'async';
+      img.onload = () => { imgs[k] = img; done(); };
+      img.onerror = done; // 없는 사진은 빠지고, 둘 다 없으면 placeholder 유지
+      img.src = p[k];
+    });
+  }
+
+  function faceOf([[x1, y1], [x2, y2]], img) {
+    const w = img.naturalWidth, h = img.naturalHeight;
+    return {
+      x: (x1 + x2) / 2 / w * 100,
+      y: (y1 + y2) / 2 / h * 100,
+      d: Math.hypot(x2 - x1, y2 - y1) / w,
+      ang: Math.atan2(y2 - y1, x2 - x1) * 180 / Math.PI
+    };
+  }
+
+  // from 사진의 얼굴이 to 사진의 얼굴 자리·크기·기울기에 겹치는 transform
+  function matchFace(img, from, to) {
+    img.style.transformOrigin = `${from.x.toFixed(2)}% ${from.y.toFixed(2)}%`;
+    img.style.setProperty('--match',
+      `translate(${(to.x - from.x).toFixed(2)}%, ${(to.y - from.y).toFixed(2)}%) ` +
+      `rotate(${(to.ang - from.ang).toFixed(2)}deg) scale(${(to.d / from.d).toFixed(3)})`);
+  }
+
+  function mountSwap(fig, imgs, eyes) {
+    const box = $('.member__photo', fig);
+    const list = [imgs.before, imgs.after].filter(Boolean);
+    if (!list.length) return;
+    list.forEach((img) => box.appendChild(img));
+    box.dataset.state = imgs.before ? 'before' : 'after';
+    fig.classList.add('has-photo', 'has-swap');
+    if (list.length < 2) return;
+
+    if (eyes && eyes.before && eyes.after && !GENTLE && !REDUCE) {
+      const b = faceOf(eyes.before, imgs.before);
+      const a = faceOf(eyes.after, imgs.after);
+      matchFace(imgs.before, b, a);
+      matchFace(imgs.after, a, b);
+    }
+
+    // 화면에 보일 때만 번갈아 바꾸고, 벗어나면 비포로 되돌려 다음에 다시 비포부터 보이게
+    let timer = null;
+    const flip = () => { box.dataset.state = box.dataset.state === 'before' ? 'after' : 'before'; };
+    new IntersectionObserver(([e]) => {
+      if (e.isIntersecting) {
+        if (!timer) timer = setInterval(flip, SWAP_MS);
+      } else {
+        clearInterval(timer);
+        timer = null;
+        box.dataset.state = 'before';
+      }
+    }, { threshold: .35 }).observe(fig);
   }
 
   // 글자 단위 분리 (분리된 글자는 aria-hidden, 스크린리더용 원문은 따로 남김)
@@ -193,7 +259,7 @@
             <div class="member__ph">
               ${silhouette(m.id)}
               <span class="member__q">?</span>
-              <span class="member__phlabel label">PHOTO PLACEHOLDER<code>${esc(m.photo)}</code></span>
+              <span class="member__phlabel label">PHOTO PLACEHOLDER<code>${esc(m.photos && m.photos.before)}</code></span>
             </div>
           </div>
           ${m.entrance === 'zoom' ? viewfinder() : ''}
@@ -345,11 +411,7 @@
         body.className = 'kc-root';
         body.innerHTML = headHTML() + MEMBERS.map((m, i) => memberHTML(m, i, MEMBERS.length)).join('');
         root.appendChild(body);
-        MEMBERS.forEach((m) => {
-          const fig = $(`#kc-${m.id} .member__portrait`, root);
-          loadImage($('.member__photo', fig), m.photo, `${m.nameKo} (${m.nameEn})`, 'member__img',
-            () => fig.classList.add('has-photo'));
-        });
+        MEMBERS.forEach((m) => loadSwap($(`#kc-${m.id} .member__portrait`, root), m));
       }
 
       // 스타일·폰트가 준비된 뒤 이름 폭 맞춤 → 연출 등록 (최대 2.5초 대기)
