@@ -31,7 +31,7 @@
 | `support.js` | 팀 페이지 원본 런타임 (수정 없음) |
 | `kkd-crew/crew.js` | 인물 소개 섹션 — 팀원 정보는 `===== TEAM INFORMATION =====` 에서 수정 |
 | `kkd-crew/crew.css` | 인물 소개 섹션 디자인 |
-| `assets/kokodan.mp4` · `assets/kokodan-poster.jpg` | 01 영상 섹션의 정체 공개 영상(36.75초, 1080p)과 재생 전 첫 화면 |
+| `assets/kokodan.mp4` · `assets/kokodan-poster.jpg` | 01 영상 섹션의 정체 공개 영상(36.75초, 1080p)과 재생 전 썸네일(영상 첫 프레임 — 구두가 볼을 밟기 직전) |
 | `assets/` | 팀원별 비포/애프터 사진 (`ahmed-before.jpg`, `ahmed-after.jpg` …) — 페이지에서 자동으로 번갈아 바뀝니다. 파일 이름은 `assets/README.txt` 참고 (redesign/ 시안에는 아직 반영 안 됨) |
 | `redesign/` | 디자인 시스템을 다시 잡은 시안 — 위 파일들과 같은 구조를 독립적으로 담고 있음 |
 
